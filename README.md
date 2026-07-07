@@ -99,6 +99,32 @@ def nightly_sync():
 保留它零成本且向前兼容。可选参数:`schedule`(crontab)、`checkin_margin`、
 `max_runtime`、`timezone`。
 
+### 3. 常驻服务心跳 `start_heartbeat`(0.2.0+)
+
+cron 用 `@monitor`(跑完 ping 一次);**常驻服务(daemon,无 cron、无 HTTP 端口给 Kuma/monitor 探)**
+用 `start_heartbeat` —— boot 时调一次,起后台线程 **ping-on-alive**:只要 `is_alive()` 为真就周期 ping。
+
+```python
+from zlx_ops_sdk import start_heartbeat
+
+stop = start_heartbeat(
+    is_alive=lambda: consumer.is_consuming,   # 判内部链路健康(读循环活着?);线程里调,须线程安全
+    url="http://<gt>/api/0/organizations/<org>/heartbeat_check/<endpoint_id>/",  # 缺省读 env ZLX_HEARTBEAT_URL
+    interval_sec=90,                           # 应 < 端侧 monitor 死人窗口
+)
+# ... 服务运行 ...
+stop()                                          # 优雅停机时停心跳(daemon 线程,进程退出也自动收)
+```
+
+| 情形 | 行为 |
+|---|---|
+| `is_alive()` 为真 | POST heartbeat URL(标记"内部链路活着") |
+| 进程活着但内部断连(`is_alive()` 转假) | **不 ping** → 端侧超时告警(抓 monitor 探进程/端口探不到的失明) |
+| `is_alive()` 自身抛 | 当作不健康跳过,心跳线程不崩 |
+| ping 端点宕 / URL 未配 | 只 warning / no-op,**被观测者照常跑**(fail-open) |
+
+为何线程而非 asyncio:任何常驻服务(同步 daemon 或 asyncio 服务)boot 时调一次即可,不绑事件循环。
+
 ## 版本钉法 / rollout 规则(爆炸半径管控)
 
 一个 SDK 版本跨 50 服务 = 一个坏 release 同步炸 50 服务 boot。因此:
@@ -121,6 +147,7 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 覆盖:init fail-open(缺 DSN / init 抛 / 超时有界 / kill switch / happy / env DSN)、
 cron Sentry-crons 四路(成功 / 失败重抛 / schedule 注册 / 端点宕 fail-open)、
 cron Heartbeat(成功 ping / 失败不 ping 重抛 / 端点宕 fail-open / env URL / 未配 no-op)、
+常驻心跳 start_heartbeat(健康 ping / 不健康不 ping / is_alive 抛不崩 / ping 宕 fail-open / env URL / 未配 no-op / stop 幂等)、
 真实 sentry_sdk 事件集成(release+tag 实测附着)、
 打包契约(py.typed 随 sdist/wheel 落地,下游免 mypy override)。
 
@@ -133,5 +160,6 @@ cron Heartbeat(成功 ping / 失败不 ping 重抛 / 端点宕 fail-open / env U
 - 包名:`zlx-ops-sdk`,import 名:`zlx_ops_sdk`,依赖钉 `~=0.1`。
 - init 签名:`zlx_ops_sdk.init(service, *, dsn=None, release=None, server=None, repo=None, environment=None, timeout=5.0, **sentry_kwargs) -> InitResult`
 - cron 签名:`zlx_ops_sdk.monitor(*, monitor_slug, schedule=None, checkin_margin=None, max_runtime=None, timezone=None, heartbeat_url=None, heartbeat_timeout=5.0)`
-- env 契约:`SENTRY_DSN`(DSN 来源)、`ZLX_OPS_DISABLED=1`(kill switch)、`GIT_SHA`/`RELEASE`(release 兜底)、`ZLX_HEARTBEAT_URL`(cron heartbeat URL 兜底)。
+- 常驻心跳签名(0.2.0+):`zlx_ops_sdk.start_heartbeat(is_alive, url=None, *, interval_sec=60.0, timeout=5.0) -> stop()`
+- env 契约:`SENTRY_DSN`(DSN 来源)、`ZLX_OPS_DISABLED=1`(kill switch)、`GIT_SHA`/`RELEASE`(release 兜底)、`ZLX_HEARTBEAT_URL`(heartbeat URL 兜底;cron 与常驻心跳共用)。
 - **GlitchTip 6.2 注意**:cron 死人开关用 **Heartbeat 监控**(建 Heartbeat 类型 monitor → 配 `heartbeat_url`),Sentry `capture_checkin` 在该版本被忽略。registry 每个 cron 服务应存其 heartbeat endpoint URL。

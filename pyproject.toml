@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zlx-ops-sdk"
-version = "0.1.0"
-description = "一行接入可观测的极小内部库:GlitchTip(Sentry 兼容)init fail-open + cron 死人开关。跨 50+ 自托管服务共用。"
+version = "0.2.0"
+description = "一行接入可观测的极小内部库:GlitchTip(Sentry 兼容)init fail-open + cron 死人开关 + 常驻服务心跳。跨 50+ 自托管服务共用。"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "zlx" }]

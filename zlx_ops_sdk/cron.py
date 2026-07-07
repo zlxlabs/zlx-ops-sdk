@@ -21,29 +21,15 @@ import functools
 import logging
 import os
 import time
-import urllib.request
 from typing import Any, Callable, Optional
+
+# ping 底座在 _ping(与常驻 start_heartbeat 共用);别名保留原私有名不破坏引用。
+from ._ping import DEFAULT_HEARTBEAT_TIMEOUT, HEARTBEAT_URL_ENV
+from ._ping import ping_heartbeat as _ping_heartbeat
 
 logger = logging.getLogger("zlx_ops_sdk")
 
-#: heartbeat URL 的 env 兜底(单 cron 服务够用;多 cron 用参数显式传)。
-HEARTBEAT_URL_ENV = "ZLX_HEARTBEAT_URL"
-#: heartbeat ping 的网络上界(秒)。
-DEFAULT_HEARTBEAT_TIMEOUT = 5.0
-
-
-def _ping_heartbeat(url: str, timeout: float) -> bool:
-    """POST 一下 GlitchTip heartbeat URL。fail-open:失败只 warning,绝不外抛。"""
-    try:
-        req = urllib.request.Request(url, data=b"", method="POST")
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            resp.read()
-        return True
-    except Exception as exc:  # noqa: BLE001 — heartbeat 永不能搞死任务
-        logger.warning(
-            "zlx_ops_sdk: cron heartbeat ping 失败(%r),任务不受影响继续", exc
-        )
-        return False
+__all__ = ["monitor", "HEARTBEAT_URL_ENV", "DEFAULT_HEARTBEAT_TIMEOUT"]
 
 
 def _build_monitor_config(schedule: Optional[str], **extra) -> Optional[dict]:
