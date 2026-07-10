@@ -26,7 +26,7 @@ SLUG = os.environ.get("ZLX_VERIFY_SLUG", "zlx-ops-sdk-selfcheck-cron")
 def main() -> None:
     res = zlx_ops_sdk.init(
         SERVICE,
-        repo="zj1123581321/zlx-ops-sdk",
+        repo="zlxlabs/zlx-ops-sdk",
         server=os.environ.get("ZLX_VERIFY_SERVER", "dev-100.87.124.57"),
         environment="verify",
     )
