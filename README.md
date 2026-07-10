@@ -152,7 +152,7 @@ cron Heartbeat(成功 ping / 失败不 ping 重抛 / 端点宕 fail-open / env U
 打包契约(py.typed 随 sdist/wheel 落地,下游免 mypy override)。
 
 已在开发机 GlitchTip 6.2(100.87.124.57:8000)活体验证:错误事件带
-`release=zj1123581321/zlx-ops-sdk@<sha>` + service/repo/server tag 入库;Heartbeat
+`release=zlxlabs/zlx-ops-sdk@<sha>` + service/repo/server tag 入库;Heartbeat
 监控收到 check(`is_up=True`)。
 
 ## 给下游(Lane C / D4 模板)的接入说明

@@ -3,7 +3,7 @@
 # 触发:push 形如 v1.2.3 的 tag。
 # 一次性前置(在 pypi.org 配,见 docs 落地 plan §7):
 #   项目 zlx-ops-sdk → Publishing → Add a new pending publisher:
-#     Owner=zj1123581321  Repo=zlx-ops-sdk  Workflow=publish.yml  Environment=pypi
+#     Owner=zlxlabs  Repo=zlx-ops-sdk  Workflow=publish.yml  Environment=pypi
 #
 # 设计:build 与 publish 分两个 job。publish job 绑 environment: pypi + id-token: write,
 # 这样 OIDC 短期令牌只在发布步骤可用,build 阶段拿不到任何凭据。
