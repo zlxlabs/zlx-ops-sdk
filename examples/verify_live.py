@@ -2,7 +2,8 @@
 
 用法(在能访问 GlitchTip 的机器上):
 
-    export SENTRY_DSN='https://<key>@100.87.124.57:8000/<project_id>'
+    export SENTRY_DSN='https://<key>@<host>:8000/<project_id>'
+    export ZLX_VERIFY_SERVER='<host>'
     python examples/verify_live.py
 
 预期:
@@ -27,7 +28,7 @@ def main() -> None:
     res = zlx_ops_sdk.init(
         SERVICE,
         repo="zlxlabs/zlx-ops-sdk",
-        server=os.environ.get("ZLX_VERIFY_SERVER", "dev-100.87.124.57"),
+        server=os.environ["ZLX_VERIFY_SERVER"],
         environment="verify",
     )
     print(f"init -> enabled={res.enabled} reason={res.reason}")
